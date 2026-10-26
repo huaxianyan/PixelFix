@@ -7,7 +7,7 @@
 - 仓库：[lucide-icons/lucide](https://github.com/lucide-icons/lucide)
 - 许可：[ISC License](https://github.com/lucide-icons/lucide/blob/main/LICENSE)
 
-图标的手机轮廓与相机条为本项目自行绘制，配色与构图按本仓库设计。
+最终图标由维护者在上述图形基础上调整，以 PNG 形式随应用分发；手机轮廓、相机条与构图为本项目自行绘制。
 
 ## libxposed API
 

@@ -14,6 +14,17 @@
 - 验证：`testDebugUnitTest assembleDebug` 通过（2 条测试），Debug 包 38671 字节，包名与标签经 `aapt2` 核对。
 - 未完成：真机安装与验收（更换包名需要卸载旧模块）、GitHub Release、后续修复接入。
 
+## STATUS-002：图标定为维护者微调稿
+
+- 日期：2026-10-26。维护者提供微调后的 PNG，图案以此为准：白色机身、深色相机条与镜头点、
+  空心描边扳手压住机身右下角并露出边缘。
+- 处理方式：抠掉底色后按自适应图标规范居中，导出五档密度的
+  `drawable-*/ic_launcher_foreground.png`；背景改用纯色 `#2E4257`。
+  旧的矢量前景、单色矢量与 `docs/images/icon.svg` 删除，README 改用 `docs/images/icon.png`。
+- 核对：圆形与圆角方形遮罩下内容均在安全区内；`aapt2` 确认图标解析为
+  `res/mipmap-anydpi-v33/ic_launcher.xml`（minSdk 37，v26 配置被 v33 覆盖，属预期）。
+- 构建通过，APK 40158 字节；未安装到设备。
+
 ## 后续计划
 
 1. 按当次授权在设备上卸载旧模块并安装，确认作用域、核对日志与屏保场景行为。

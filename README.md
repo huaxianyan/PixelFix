@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="docs/images/icon.svg" width="120" alt="Pixel Fix 图标">
+  <img src="docs/images/icon.png" width="120" alt="Pixel Fix 图标">
 
   # Pixel Fix
 </div>
