@@ -1,0 +1,3 @@
+<resources>
+    <string name="module_description">收集针对 Pixel 系统界面小问题的修复，每个修复只在已核对的系统版本上生效。</string>
+</resources>

@@ -1,0 +1,167 @@
+package com.neko7ina.pixelfix;
+
+import android.os.Build;
+import android.os.Looper;
+import android.util.Log;
+
+import java.io.FileInputStream;
+import java.security.DigestInputStream;
+import java.security.MessageDigest;
+
+import io.github.libxposed.api.XposedInterface;
+import io.github.libxposed.api.XposedModule;
+
+public final class MainModule extends XposedModule {
+    private static final String TAG = "DreamLockscreenFix";
+    private boolean attempted;
+    private volatile boolean failed;
+    private volatile NativeAccess.Owner owner;
+    private volatile NativeAccess.FaceCycleOwner faceCycleOwner;
+
+    @Override
+    public void onPackageReady(PackageReadyParam param) {
+        if (!param.isFirstPackage() || !"com.android.systemui".equals(param.getPackageName())
+                || attempted) {
+            return;
+        }
+        attempted = true;
+        if (Build.VERSION.SDK_INT != 37 || !BuildConfig.DREAM_LOCKS_BUILD.equals(Build.ID)) {
+            log(Log.WARN, TAG, "unsupported build; inactive; build=" + Build.ID);
+            return;
+        }
+        try {
+            String digest = sha256(param.getApplicationInfo().sourceDir);
+            if (!BuildConfig.DREAM_LOCKS_SYSTEMUI_SHA256.equals(digest)) {
+                log(Log.WARN, TAG, "SystemUI APK mismatch; inactive; sha256=" + digest);
+                return;
+            }
+            NativeAccess access = new NativeAccess(param.getClassLoader());
+            log(Log.INFO, TAG, "adaptation matched; module=" + BuildConfig.VERSION_NAME
+                    + "; build=" + Build.ID + "; sha256=" + digest);
+            // Both native callers validate before publishing their new scene. Deoptimizing
+            // the callers makes the validation hook observable even with AOT compilation.
+            if (!deoptimize(access.changeScene) || !deoptimize(access.snapToScene)) {
+                throw new IllegalStateException("Cannot deoptimize native scene callers");
+            }
+            install(access);
+            log(Log.INFO, TAG, "hooks installed; waiting for native owners and dream lifecycle");
+        } catch (Throwable error) {
+            failed = true;
+            log(Log.ERROR, TAG, "installation failed; inactive", error);
+        }
+    }
+
+    private void install(NativeAccess access) {
+        XposedInterface.HookHandle capture = hook(access.timerConstructor)
+                .setExceptionMode(XposedInterface.ExceptionMode.PROTECTIVE)
+                .intercept(chain -> {
+                    Object result = chain.proceed();
+                    if (!failed) {
+                        try {
+                            owner = access.capture(chain.getThisObject());
+                            log(Log.INFO, TAG, "timer owner captured");
+                        } catch (Throwable error) {
+                            fail("timer owner binding failed", error);
+                        }
+                    }
+                    return result;
+                });
+        XposedInterface.HookHandle captureFace = null;
+        try {
+            captureFace = hook(access.biometricConstructor)
+                    .setExceptionMode(XposedInterface.ExceptionMode.PROTECTIVE)
+                    .intercept(chain -> {
+                        Object result = chain.proceed();
+                        if (!failed) {
+                            try {
+                                faceCycleOwner = access.captureFaceCycle(chain.getThisObject());
+                                log(Log.INFO, TAG, "face-cycle owner captured");
+                            } catch (Throwable error) {
+                                fail("face-cycle owner binding failed", error);
+                            }
+                        }
+                        return result;
+                    });
+            hook(access.validateSceneChange)
+                    .setExceptionMode(XposedInterface.ExceptionMode.PROTECTIVE)
+                    .intercept(chain -> {
+                        Object accepted = chain.proceed();
+                        if (!failed && Boolean.TRUE.equals(accepted)) {
+                            boolean starting = NativeAccess.isDreamStart(chain.getArg(1),
+                                    (String) chain.getArg(2), access.dream);
+                            boolean exiting = NativeAccess.isDreamExit(chain.getArg(0), chain.getArg(1),
+                                    (String) chain.getArg(2), access.dream, access.lockscreen);
+                            if (starting || exiting) {
+                                try {
+                                    handleDreamBoundary(access, chain.getThisObject(), starting);
+                                } catch (Throwable error) {
+                                    fail("dream lifecycle repair failed; inspect native states", error);
+                                }
+                            }
+                        }
+                        return accepted;
+                    });
+        } catch (Throwable error) {
+            if (captureFace != null) {
+                captureFace.unhook();
+            }
+            capture.unhook();
+            throw error;
+        }
+    }
+
+    private void handleDreamBoundary(NativeAccess access, Object scene, boolean starting)
+            throws ReflectiveOperationException {
+        // The alarm receiver uses a null Handler (main looper). Never post this repair:
+        // it must finish before the validated scene is published and before authentication.
+        if (Looper.myLooper() != Looper.getMainLooper()) {
+            fail("dream lifecycle arrived off main thread; repair disabled", null);
+            return;
+        }
+        NativeAccess.Owner current = owner;
+        if (current == null || current.scene() != scene) {
+            fail("matching timer owner unavailable; repair disabled", null);
+            return;
+        }
+        if (starting) {
+            NativeAccess.FaceCycleOwner faceOwner = faceCycleOwner;
+            if (faceOwner == null) {
+                fail("face-cycle owner unavailable; repair disabled", null);
+                return;
+            }
+            String result = access.resetFaceCycle(current, faceOwner, scene);
+            log(Log.INFO, TAG, result == null
+                    ? "dream start observed; no stale passive face cycle to finish" : result);
+            return;
+        }
+        if (!access.hasLiveGrace(current)) {
+            log(Log.INFO, TAG, "dream exit observed; no active awake grace to finish");
+            return;
+        }
+        log(Log.INFO, TAG, "hit: native Dream stopped request accepted into lockscreen");
+        log(Log.INFO, TAG, access.finishGrace(current));
+    }
+
+    private void fail(String message, Throwable error) {
+        failed = true;
+        if (error == null) {
+            log(Log.ERROR, TAG, message);
+        } else {
+            log(Log.ERROR, TAG, message, error);
+        }
+    }
+
+    private static String sha256(String path) throws Exception {
+        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+        try (DigestInputStream input = new DigestInputStream(new FileInputStream(path), digest)) {
+            byte[] buffer = new byte[64 * 1024];
+            while (input.read(buffer) != -1) { /* Hash the installed APK without extracting it. */ }
+        }
+        StringBuilder hex = new StringBuilder(64);
+        for (byte value : digest.digest()) {
+            hex.append(Character.forDigit((value & 0xff) >>> 4, 16));
+            hex.append(Character.forDigit(value & 0xf, 16));
+        }
+        return hex.toString();
+    }
+}
