@@ -12,7 +12,7 @@
     <path
         android:fillColor="#FFFFFF"
         android:pathData="M50.5,30.7 A2.8,2.8 0 1 0 50.5,36.3 A2.8,2.8 0 1 0 50.5,30.7 Z" />
-    <!-- Lucide wrench over the body; the background-coloured stroke keeps a gap. -->
+    <!-- Lucide wrench: thin outline, background-coloured gap and hollow head. -->
     <group
         android:scaleX="1.52"
         android:scaleY="1.52"
@@ -20,15 +20,18 @@
         android:translateY="38.5">
         <path
             android:strokeColor="@color/ic_launcher_background"
-            android:strokeWidth="4.0"
+            android:strokeWidth="3.4"
             android:strokeLineCap="round"
             android:strokeLineJoin="round"
             android:pathData="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.106-3.105c.32-.322.863-.22.983.218a6 6 0 0 1-8.259 7.057l-7.91 7.91a1 1 0 0 1-2.999-3l7.91-7.91a6 6 0 0 1 7.057-8.259c.438.12.54.662.219.984z" />
         <path
             android:strokeColor="#FFFFFF"
-            android:strokeWidth="2.4"
+            android:strokeWidth="2.0"
             android:strokeLineCap="round"
             android:strokeLineJoin="round"
             android:pathData="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.106-3.105c.32-.322.863-.22.983.218a6 6 0 0 1-8.259 7.057l-7.91 7.91a1 1 0 0 1-2.999-3l7.91-7.91a6 6 0 0 1 7.057-8.259c.438.12.54.662.219.984z" />
+        <path
+            android:fillColor="@color/ic_launcher_background"
+            android:pathData="M15.2,9.7 A1.7,1.7 0 1 0 15.2,13.1 A1.7,1.7 0 1 0 15.2,9.7 Z" />
     </group>
 </vector>
