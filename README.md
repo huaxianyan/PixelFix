@@ -62,4 +62,4 @@ docs/                                      兼容范围、发布说明、修复�
 
 ## 第三方资源
 
-图标中的扳手图形来自 Material Icons，许可见 [第三方声明](THIRD_PARTY_NOTICES.md)。
+图标中的扳手图形来自 Lucide，手机轮廓为本项目绘制，许可见 [第三方声明](THIRD_PARTY_NOTICES.md)。

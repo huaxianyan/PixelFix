@@ -1,13 +1,13 @@
 # 第三方声明
 
-## Material Icons
+## Lucide Icons
 
-应用图标中的扳手图形取自 Google Material Icons 的 `build` 图标，按 Apache License 2.0 使用。
+应用图标中的扳手图形取自 [Lucide](https://lucide.dev/) 的 `wrench` 图标，按 ISC License 使用。
 
-- 项目：[google/material-design-icons](https://github.com/google/material-design-icons)
-- 许可：[Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0)
+- 仓库：[lucide-icons/lucide](https://github.com/lucide-icons/lucide)
+- 许可：[ISC License](https://github.com/lucide-icons/lucide/blob/main/LICENSE)
 
-图标的整体构图（充电底座与充电弧线）为本项目原创，配色与排版按本仓库自行设计。
+图标的手机轮廓与相机条为本项目自行绘制，配色与构图按本仓库设计。
 
 ## libxposed API
 
