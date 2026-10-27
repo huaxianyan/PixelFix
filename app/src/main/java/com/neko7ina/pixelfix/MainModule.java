@@ -12,42 +12,66 @@ import io.github.libxposed.api.XposedInterface;
 import io.github.libxposed.api.XposedModule;
 
 public final class MainModule extends XposedModule {
-    private static final String TAG = "DreamLockscreenFix";
+    private static final String TAG = "PixelFix";
+    private static final String SYSTEM_UI = "com.android.systemui";
     private boolean attempted;
-    private volatile boolean failed;
+    private volatile boolean dreamFailed;
     private volatile NativeAccess.Owner owner;
     private volatile NativeAccess.FaceCycleOwner faceCycleOwner;
 
     @Override
     public void onPackageReady(PackageReadyParam param) {
-        if (!param.isFirstPackage() || !"com.android.systemui".equals(param.getPackageName())
-                || attempted) {
+        if (!param.isFirstPackage() || !SYSTEM_UI.equals(param.getPackageName()) || attempted) {
             return;
         }
         attempted = true;
-        if (Build.VERSION.SDK_INT != 37 || !BuildConfig.DREAM_LOCKS_BUILD.equals(Build.ID)) {
-            log(Log.WARN, TAG, "unsupported build; inactive; build=" + Build.ID);
+        if (Build.VERSION.SDK_INT != 37) {
+            log(Log.WARN, TAG, "unsupported SDK; inactive; sdk=" + Build.VERSION.SDK_INT);
             return;
         }
+        String digest;
         try {
-            String digest = sha256(param.getApplicationInfo().sourceDir);
-            if (!BuildConfig.DREAM_LOCKS_SYSTEMUI_SHA256.equals(digest)) {
-                log(Log.WARN, TAG, "SystemUI APK mismatch; inactive; sha256=" + digest);
-                return;
-            }
+            digest = sha256(param.getApplicationInfo().sourceDir);
+        } catch (Throwable error) {
+            log(Log.ERROR, TAG, "Cannot hash the SystemUI APK; inactive", error);
+            return;
+        }
+        // Both fixes target this exact SystemUI APK. A fix needing another build brings its
+        // own constants rather than widening this gate, and each fix still disables itself
+        // alone when its native bindings fail.
+        if (!BuildConfig.SYSTEMUI_BUILD.equals(Build.ID)
+                || !BuildConfig.SYSTEMUI_SHA256.equals(digest)) {
+            log(Log.WARN, TAG, "SystemUI build mismatch; inactive; build=" + Build.ID
+                    + "; sha256=" + digest);
+            return;
+        }
+        log(Log.INFO, TAG, "adaptation matched; module=" + BuildConfig.VERSION_NAME
+                + "; build=" + Build.ID + "; sha256=" + digest);
+        installDreamFix(param);
+        installKeyguardSoundFix(param);
+    }
+
+    private void installDreamFix(PackageReadyParam param) {
+        try {
             NativeAccess access = new NativeAccess(param.getClassLoader());
-            log(Log.INFO, TAG, "adaptation matched; module=" + BuildConfig.VERSION_NAME
-                    + "; build=" + Build.ID + "; sha256=" + digest);
             // Both native callers validate before publishing their new scene. Deoptimizing
             // the callers makes the validation hook observable even with AOT compilation.
             if (!deoptimize(access.changeScene) || !deoptimize(access.snapToScene)) {
                 throw new IllegalStateException("Cannot deoptimize native scene callers");
             }
             install(access);
-            log(Log.INFO, TAG, "hooks installed; waiting for native owners and dream lifecycle");
+            log(Log.INFO, TAG, "Dream lockscreen fix installed; waiting for native owners");
         } catch (Throwable error) {
-            failed = true;
-            log(Log.ERROR, TAG, "installation failed; inactive", error);
+            dreamFailed = true;
+            log(Log.ERROR, TAG, "Dream lockscreen fix unavailable; inactive", error);
+        }
+    }
+
+    private void installKeyguardSoundFix(PackageReadyParam param) {
+        try {
+            KeyguardSoundFix.install(this, param.getClassLoader());
+        } catch (Throwable error) {
+            log(Log.ERROR, TAG, "Keyguard sound fix unavailable; inactive", error);
         }
     }
 
@@ -56,7 +80,7 @@ public final class MainModule extends XposedModule {
                 .setExceptionMode(XposedInterface.ExceptionMode.PROTECTIVE)
                 .intercept(chain -> {
                     Object result = chain.proceed();
-                    if (!failed) {
+                    if (!dreamFailed) {
                         try {
                             owner = access.capture(chain.getThisObject());
                             log(Log.INFO, TAG, "timer owner captured");
@@ -72,7 +96,7 @@ public final class MainModule extends XposedModule {
                     .setExceptionMode(XposedInterface.ExceptionMode.PROTECTIVE)
                     .intercept(chain -> {
                         Object result = chain.proceed();
-                        if (!failed) {
+                        if (!dreamFailed) {
                             try {
                                 faceCycleOwner = access.captureFaceCycle(chain.getThisObject());
                                 log(Log.INFO, TAG, "face-cycle owner captured");
@@ -86,7 +110,7 @@ public final class MainModule extends XposedModule {
                     .setExceptionMode(XposedInterface.ExceptionMode.PROTECTIVE)
                     .intercept(chain -> {
                         Object accepted = chain.proceed();
-                        if (!failed && Boolean.TRUE.equals(accepted)) {
+                        if (!dreamFailed && Boolean.TRUE.equals(accepted)) {
                             boolean starting = NativeAccess.isDreamStart(chain.getArg(1),
                                     (String) chain.getArg(2), access.dream);
                             boolean exiting = NativeAccess.isDreamExit(chain.getArg(0), chain.getArg(1),
@@ -143,7 +167,7 @@ public final class MainModule extends XposedModule {
     }
 
     private void fail(String message, Throwable error) {
-        failed = true;
+        dreamFailed = true;
         if (error == null) {
             log(Log.ERROR, TAG, message);
         } else {
