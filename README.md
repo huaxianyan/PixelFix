@@ -23,7 +23,7 @@
 2. 安装并在 LSPosed 管理器中启用「Pixel Fix」，作用域勾选「系统界面」。
 3. 重启设备。
 
-日志里出现 `adaptation matched` 说明核对通过并已启用；出现 `unavailable` 或 `disabled` 说明该系统版本不匹配，修复会自动停用。
+日志里出现 `adaptation matched` 说明核对通过并已启用。出现 `unavailable` 或 `disabled` 说明该系统版本不匹配，修复会自动停用。
 
 <a href="https://apps.obtainium.imranr.dev/redirect?r=obtainium://app/%7B%22id%22%3A%22com.neko7ina.pixelfix%22%2C%22url%22%3A%22https%3A%2F%2Fgithub.com%2Fhuaxianyan%2FPixelFix%22%2C%22author%22%3A%22huaxianyan%22%2C%22name%22%3A%22Pixel%20Fix%22%7D"><img src="docs/images/obtainium-badge.png" alt="Get it on Obtainium" height="48"></a>
 

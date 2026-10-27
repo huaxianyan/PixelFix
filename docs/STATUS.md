@@ -17,7 +17,7 @@
 ## STATUS-010：合并到 main 并发布 v0.4.0
 
 - 日期：2026-10-27。分支 `fix/keyguard-double-sound` 合并到 `main`，版本升到 `0.4.0 / 4`。
-- 发布说明写入 `docs/release-notes/v0.4.0.md`，按要求单独写明适用系统版本与构建号；
+- 发布说明写入 `docs/release-notes/v0.4.0.md`，按要求单独写明适用系统版本与构建号。
   发布说明门禁脚本校验通过。
 - 产物：`PixelFix-0.4.0.apk` 与同名 `.sha256`，使用正式签名身份；已发布
   https://github.com/huaxianyan/PixelFix/releases/tag/v0.4.0 ，线上资产下载后校验一致。
@@ -61,7 +61,7 @@
 
 ## STATUS-006：去重规则改为时间窗加锁屏隐藏双条件
 
-- 日期：2026-10-27。探针日志证实：解锁音 ID=2、锁屏音 ID=1，两者不同音效；
+- 日期：2026-10-27。探针日志证实：解锁音 ID=2、锁屏音 ID=1，两者不同音效。
   所有正常解锁请求都发生在 `mShowing=true` 时，唯一被跳过的重复是 `mShowing=false`
   且距上一次解锁音 8 ms；另有一次 `mShowing=false`、939 ms 的请求应当播放。
 - 结论：单看时间窗会误杀「解锁→锁屏→再解锁」，必须同时要求锁屏已隐藏。
@@ -84,7 +84,7 @@
 
 ## STATUS-004：建立正式签名身份并首次安装
 
-- 日期：2026-10-27。按用户选择生成随机口令的 PKCS#12 密钥库，RSA 4096，有效期 100 年；
+- 日期：2026-10-27。按用户选择生成随机口令的 PKCS#12 密钥库，RSA 4096，有效期 100 年。
   口令写在本地 `signing/signing-credentials.txt`，未在对话中显示，也未进 Git。
 - 证书主题 `CN=Pixel Fix, OU=Release, O=huaxianyan, C=CN`，SHA-256
   `48cda999ed4dcc8b86c297c949f319b977cfa98ffd3c1bce70bad95ba72cc876`；公开证书
