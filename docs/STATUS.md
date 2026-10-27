@@ -24,6 +24,9 @@
 - 构建：`app/build.gradle.kts` 从凭据文件读取签名材料，缺文件时 release 变体不签名。
   `assembleRelease` 产物 60589 字节，`apksigner` 证书与仓库基准证书一致。
 - NAS 尚未上线，恢复副本待用户手动备份到约定目录。
+- 安装：已按当次授权卸载 `com.neko7ina.dreamlockscreenfix`，安装正式签名包
+  `com.neko7ina.pixelfix` 0.3.0 / 3（60589 字节）。设备上取回的已安装包证书与基准一致。
+  模块启用与重启由用户自行完成。
 
 ## STATUS-003：实现锁屏音效去重，待真机验证
 
