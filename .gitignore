@@ -2,3 +2,6 @@
 .gradle/
 local.properties
 *.apk
+# Release signing material stays local until backed up off-device.
+signing/*.p12
+signing/signing-credentials.txt

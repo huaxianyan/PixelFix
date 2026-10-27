@@ -4,6 +4,20 @@ plugins {
 
 layout.buildDirectory = file("../.work/build/app")
 
+// Signing material lives outside Git; see signing/signing-credentials.txt.
+val credentialsFile = rootProject.file("signing/signing-credentials.txt")
+val signingValues: Map<String, String> = if (credentialsFile.isFile) {
+    credentialsFile.readLines()
+        .filter { it.contains(": ") }
+        .associate { it.substringBefore(": ") to it.substringAfter(": ") }
+} else {
+    emptyMap()
+}
+val signingKeystore = signingValues["keystore"]?.let { rootProject.file(it) }
+val hasReleaseSigning = signingKeystore?.isFile == true &&
+    !signingValues["storePassword"].isNullOrBlank() &&
+    !signingValues["alias"].isNullOrBlank()
+
 android {
     namespace = "com.neko7ina.pixelfix"
     compileSdk = 37
@@ -24,6 +38,27 @@ android {
 
     buildFeatures {
         buildConfig = true
+    }
+
+    signingConfigs {
+        if (hasReleaseSigning) {
+            create("release") {
+                storeFile = signingKeystore
+                storePassword = signingValues["storePassword"]
+                keyAlias = signingValues["alias"]
+                keyPassword = signingValues["keyPassword"] ?: signingValues["storePassword"]
+                storeType = signingValues["storeType"] ?: "PKCS12"
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            isMinifyEnabled = false
+            if (hasReleaseSigning) {
+                signingConfig = signingConfigs.getByName("release")
+            }
+        }
     }
 
     compileOptions {

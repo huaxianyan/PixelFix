@@ -14,6 +14,17 @@
 - 验证：`testDebugUnitTest assembleDebug` 通过（2 条测试），Debug 包 38671 字节，包名与标签经 `aapt2` 核对。
 - 未完成：真机安装与验收（更换包名需要卸载旧模块）、GitHub Release、后续修复接入。
 
+## STATUS-004：建立正式签名身份并首次安装
+
+- 日期：2026-10-27。按用户选择生成随机口令的 PKCS#12 密钥库，RSA 4096，有效期 100 年；
+  口令写在本地 `signing/signing-credentials.txt`，未在对话中显示，也未进 Git。
+- 证书主题 `CN=Pixel Fix, OU=Release, O=huaxianyan, C=CN`，SHA-256
+  `48cda999ed4dcc8b86c297c949f319b977cfa98ffd3c1bce70bad95ba72cc876`；公开证书
+  提交为 `signing/release-certificate.pem`，说明见 `SIGNING.md`。
+- 构建：`app/build.gradle.kts` 从凭据文件读取签名材料，缺文件时 release 变体不签名。
+  `assembleRelease` 产物 60589 字节，`apksigner` 证书与仓库基准证书一致。
+- NAS 尚未上线，恢复副本待用户手动备份到约定目录。
+
 ## STATUS-003：实现锁屏音效去重，待真机验证
 
 - 日期：2026-10-27。分支 `fix/keyguard-double-sound`，未合并、未发布。
