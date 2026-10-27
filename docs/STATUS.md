@@ -14,6 +14,13 @@
 - 验证：`testDebugUnitTest assembleDebug` 通过（2 条测试），Debug 包 38671 字节，包名与标签经 `aapt2` 核对。
 - 未完成：真机安装与验收（更换包名需要卸载旧模块）、GitHub Release、后续修复接入。
 
+## STATUS-010：合并到 main 并发布 v0.4.0
+
+- 日期：2026-10-27。分支 `fix/keyguard-double-sound` 合并到 `main`，版本升到 `0.4.0 / 4`。
+- 发布说明写入 `docs/release-notes/v0.4.0.md`，按要求单独写明适用系统版本与构建号；
+  发布说明门禁脚本校验通过。
+- 产物：`PixelFix-0.4.0.apk` 与同名 `.sha256`，使用正式签名身份。
+
 ## STATUS-009：静音根因确认为原生未请求，补声后真机通过
 
 - 日期：2026-10-27。两份静音现场（14:44:14、14:44:31）确认：解锁完成、keyguardDone

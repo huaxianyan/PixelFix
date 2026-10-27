@@ -27,8 +27,8 @@ android {
         applicationId = "com.neko7ina.pixelfix"
         minSdk = 37
         targetSdk = 37
-        versionCode = 3
-        versionName = "0.3.0"
+        versionCode = 4
+        versionName = "0.4.0"
         // Every fix targets this exact SystemUI APK. A fix that needs another build
         // must bring its own constants instead of widening this gate.
         buildConfigField("String", "SYSTEMUI_BUILD", "\"CP3A.261005.005\"")
