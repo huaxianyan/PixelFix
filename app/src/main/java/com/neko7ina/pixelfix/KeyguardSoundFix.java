@@ -32,6 +32,10 @@ final class KeyguardSoundFix {
         playSound.setAccessible(true);
         Field unlockSoundId = mediator.getDeclaredField("mUnlockSoundId");
         unlockSoundId.setAccessible(true);
+        Field lockSoundId = mediator.getDeclaredField("mLockSoundId");
+        lockSoundId.setAccessible(true);
+        Field keyguardShowing = mediator.getDeclaredField("mShowing");
+        keyguardShowing.setAccessible(true);
         Method exitFinished = mediator.getDeclaredMethod("onKeyguardExitFinished", String.class);
         exitFinished.setAccessible(true);
         // The caller is AOT compiled; without this the hook on playSound is bypassed by inlining.
@@ -63,13 +67,14 @@ final class KeyguardSoundFix {
                             long since = previous == NEVER ? Long.MAX_VALUE : now - previous;
                             if (observed.compareAndSet(false, true)) {
                                 module.log(Log.INFO, TAG, "Keyguard sound interceptor active; "
-                                        + "unlockId=" + unlockId + "; sinceLast="
-                                        + (previous == NEVER ? "none" : since));
+                                        + "unlockId=" + unlockId + "; lockId="
+                                        + lockSoundId.getInt(instance));
                             }
-                            if (!KeyguardSoundPolicy.shouldPlay(requested, unlockId, since)) {
+                            if (!KeyguardSoundPolicy.shouldPlay(requested, unlockId,
+                                    keyguardShowing.getBoolean(instance), since)) {
                                 if (skipped.compareAndSet(false, true)) {
-                                    module.log(Log.INFO, TAG,
-                                            "Skipped duplicate unlock sound; sinceLast=" + since);
+                                    module.log(Log.INFO, TAG, "Skipped duplicate unlock sound; "
+                                            + "sinceLast=" + since);
                                 }
                                 return null;
                             }
