@@ -19,7 +19,8 @@
 - 日期：2026-10-27。分支 `fix/keyguard-double-sound` 合并到 `main`，版本升到 `0.4.0 / 4`。
 - 发布说明写入 `docs/release-notes/v0.4.0.md`，按要求单独写明适用系统版本与构建号；
   发布说明门禁脚本校验通过。
-- 产物：`PixelFix-0.4.0.apk` 与同名 `.sha256`，使用正式签名身份。
+- 产物：`PixelFix-0.4.0.apk` 与同名 `.sha256`，使用正式签名身份；已发布
+  https://github.com/huaxianyan/PixelFix/releases/tag/v0.4.0 ，线上资产下载后校验一致。
 
 ## STATUS-009：静音根因确认为原生未请求，补声后真机通过
 
