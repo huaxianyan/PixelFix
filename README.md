@@ -17,15 +17,25 @@
 
 每个修复的核对方式、验收记录与已知边界见 [兼容范围](docs/COMPATIBILITY.md)。
 
-## 快速开始
+## 安装
 
-前置条件：Android 17 设备、已安装 LSPosed，且系统版本在对应修复的支持范围内。
-
-1. 下载 `PixelFix-<版本>.apk` 并安装。
-2. 在 LSPosed 管理器中启用「Pixel Fix」，作用域勾选「系统界面」。
+1. 从 [Releases](https://github.com/huaxianyan/PixelFix/releases) 下载 `PixelFix-<版本>.apk`。
+2. 安装并在 LSPosed 管理器中启用「Pixel Fix」，作用域勾选「系统界面」。
 3. 重启设备。
 
 日志里出现 `adaptation matched` 说明核对通过并已启用；出现 `unavailable` 或 `disabled` 说明该系统版本不匹配，修复会自动停用。
+
+<a href="https://apps.obtainium.imranr.dev/redirect?r=obtainium://app/%7B%22id%22%3A%22com.neko7ina.pixelfix%22%2C%22url%22%3A%22https%3A%2F%2Fgithub.com%2Fhuaxianyan%2FPixelFix%22%2C%22author%22%3A%22huaxianyan%22%2C%22name%22%3A%22Pixel%20Fix%22%7D"><img src="docs/images/obtainium-badge.png" alt="Get it on Obtainium" height="48"></a>
+
+装了 [Obtainium](https://github.com/ImranR98/Obtainium) 的话，点上面的按钮即可把本项目加入更新列表，之后新版本会自动检查。
+
+```text
+Application ID: com.neko7ina.pixelfix
+min SDK:        37（Android 17）
+target SDK:     37
+```
+
+## 构建
 
 从源码构建需要 JDK 17 与 Android SDK 37：
 
