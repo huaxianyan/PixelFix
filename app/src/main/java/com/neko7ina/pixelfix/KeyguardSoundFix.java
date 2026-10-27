@@ -13,41 +13,46 @@ import io.github.libxposed.api.XposedInterface;
 import io.github.libxposed.api.XposedModule;
 
 /**
- * Stops the repeated unlock sound of a single unlock. Native {@code onKeyguardExitFinished} plays
- * {@code mUnlockSoundId}, and the surface-behind finish runs that routine again, which is the
- * second sound. Only a second unlock sound inside {@link KeyguardSoundPolicy#DUPLICATE_WINDOW_MS}
- * is dropped; a first sound always plays, and broadcasts, authentication and lock sounds stay
- * untouched.
+ * Drops the repeated finish of a single unlock. Native {@code onKeyguardExitFinished} hides the
+ * keyguard, plays the unlock sound and sends USER_PRESENT; the surface-behind animation then
+ * finishes the same exit again, which is the second sound. Only that repeat is skipped, decided by
+ * the native state (keyguard already hidden) and a short window. Authentication, lock sounds and
+ * every first exit stay untouched.
  */
 final class KeyguardSoundFix {
     private static final String TAG = "PixelFix";
+    private static final String MEDIATOR = "com.android.systemui.keyguard.KeyguardViewMediator";
     private static final long NEVER = Long.MIN_VALUE;
 
     private KeyguardSoundFix() {
     }
 
     static void install(XposedModule module, ClassLoader loader) throws ReflectiveOperationException {
-        Class<?> mediator = loader.loadClass("com.android.systemui.keyguard.KeyguardViewMediator");
-        Method playSound = mediator.getDeclaredMethod("playSound", int.class);
-        playSound.setAccessible(true);
-        Field unlockSoundId = mediator.getDeclaredField("mUnlockSoundId");
-        unlockSoundId.setAccessible(true);
-        Field lockSoundId = mediator.getDeclaredField("mLockSoundId");
-        lockSoundId.setAccessible(true);
-        Field keyguardShowing = mediator.getDeclaredField("mShowing");
-        keyguardShowing.setAccessible(true);
+        Class<?> mediator = loader.loadClass(MEDIATOR);
         Method exitFinished = mediator.getDeclaredMethod("onKeyguardExitFinished", String.class);
         exitFinished.setAccessible(true);
-        // The caller is AOT compiled; without this the hook on playSound is bypassed by inlining.
-        if (!module.deoptimize(exitFinished)) {
-            throw new IllegalStateException("Cannot deoptimize the keyguard exit caller");
+        Field keyguardShowing = mediator.getDeclaredField("mShowing");
+        keyguardShowing.setAccessible(true);
+
+        // Every caller is AOT compiled; without deoptimizing all of them the hook is bypassed by
+        // inlining. Verified callers of onKeyguardExitFinished on this build:
+        for (Method caller : new Method[] {
+                mediator.getDeclaredMethod("handleHide"),
+                mediator.getDeclaredMethod("handleStartKeyguardExitAnimationInner",
+                        loader.loadClass("com.android.wm.shell.shared.compat.SurfaceTransition$Params")),
+                loader.loadClass(MEDIATOR + "$$ExternalSyntheticLambda3").getDeclaredMethod("run"),
+                loader.loadClass(MEDIATOR + "$$ExternalSyntheticLambda15").getDeclaredMethod("invoke"),
+        }) {
+            caller.setAccessible(true);
+            if (!module.deoptimize(caller)) {
+                throw new IllegalStateException("Cannot deoptimize " + caller.getName());
+            }
         }
 
-        Map<Object, Long> lastUnlockSound = new WeakHashMap<>();
+        Map<Object, Long> lastExit = new WeakHashMap<>();
         AtomicBoolean skipped = new AtomicBoolean();
-        AtomicBoolean observed = new AtomicBoolean();
         AtomicBoolean failed = new AtomicBoolean();
-        module.hook(playSound)
+        module.hook(exitFinished)
                 .setExceptionMode(XposedInterface.ExceptionMode.PROTECTIVE)
                 .intercept(chain -> {
                     if (failed.get()) {
@@ -55,41 +60,31 @@ final class KeyguardSoundFix {
                     }
                     try {
                         Object instance = chain.getThisObject();
-                        int requested = (int) chain.getArg(0);
-                        int unlockId = unlockSoundId.getInt(instance);
-                        if (requested == unlockId) {
-                            long now = SystemClock.uptimeMillis();
-                            long previous;
-                            synchronized (lastUnlockSound) {
-                                Long stored = lastUnlockSound.get(instance);
-                                previous = stored == null ? NEVER : stored;
+                        long now = SystemClock.uptimeMillis();
+                        long previous;
+                        synchronized (lastExit) {
+                            Long stored = lastExit.get(instance);
+                            previous = stored == null ? NEVER : stored;
+                        }
+                        long since = previous == NEVER ? Long.MAX_VALUE : now - previous;
+                        if (KeyguardSoundPolicy.isDuplicateExit(
+                                keyguardShowing.getBoolean(instance), since)) {
+                            if (skipped.compareAndSet(false, true)) {
+                                module.log(Log.INFO, TAG,
+                                        "Skipped repeated keyguard exit; sinceLast=" + since);
                             }
-                            long since = previous == NEVER ? Long.MAX_VALUE : now - previous;
-                            if (observed.compareAndSet(false, true)) {
-                                module.log(Log.INFO, TAG, "Keyguard sound interceptor active; "
-                                        + "unlockId=" + unlockId + "; lockId="
-                                        + lockSoundId.getInt(instance));
-                            }
-                            if (!KeyguardSoundPolicy.shouldPlay(requested, unlockId,
-                                    keyguardShowing.getBoolean(instance), since)) {
-                                if (skipped.compareAndSet(false, true)) {
-                                    module.log(Log.INFO, TAG, "Skipped duplicate unlock sound; "
-                                            + "sinceLast=" + since);
-                                }
-                                return null;
-                            }
-                            synchronized (lastUnlockSound) {
-                                lastUnlockSound.put(instance, now);
-                            }
+                            return null;
+                        }
+                        synchronized (lastExit) {
+                            lastExit.put(instance, now);
                         }
                     } catch (Throwable error) {
                         failed.set(true);
                         module.log(Log.ERROR, TAG,
-                                "Keyguard sound adjustment disabled; leaving sounds unchanged",
-                                error);
+                                "Keyguard exit adjustment disabled; leaving it unchanged", error);
                     }
                     return chain.proceed();
                 });
-        module.log(Log.INFO, TAG, "Keyguard sound hook installed");
+        module.log(Log.INFO, TAG, "Keyguard exit hook installed");
     }
 }

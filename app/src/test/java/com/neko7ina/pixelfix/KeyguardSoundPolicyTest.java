@@ -6,20 +6,19 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public final class KeyguardSoundPolicyTest {
-    private static final int UNLOCK = 2;
-    private static final int LOCK = 1;
+    /** No previous exit in this process. */
+    private static final long NONE = Long.MAX_VALUE;
 
     @Test
-    public void onlyTheHiddenKeyguardRepeatOfOneUnlockIsDropped() {
-        // Device evidence: the duplicate arrives with the keyguard already hidden, 8 ms later.
-        assertFalse(KeyguardSoundPolicy.shouldPlay(UNLOCK, UNLOCK, false, 8));
-        assertFalse(KeyguardSoundPolicy.shouldPlay(UNLOCK, UNLOCK, false, 444));
+    public void onlyTheSecondFinishOfOneUnlockIsTreatedAsDuplicate() {
+        // Device evidence: the repeat arrives with the keyguard already hidden, 8 ms later.
+        assertTrue(KeyguardSoundPolicy.isDuplicateExit(false, 8));
+        assertTrue(KeyguardSoundPolicy.isDuplicateExit(false, 444));
         // A fresh unlock runs while the keyguard still shows, even right after another unlock.
-        assertTrue(KeyguardSoundPolicy.shouldPlay(UNLOCK, UNLOCK, true, 8));
-        assertTrue(KeyguardSoundPolicy.shouldPlay(UNLOCK, UNLOCK, true, 2563));
-        // Hidden keyguard with no recent unlock sound still plays (observed 939 ms case).
-        assertTrue(KeyguardSoundPolicy.shouldPlay(UNLOCK, UNLOCK, false, 939));
-        // The lock sound is never touched.
-        assertTrue(KeyguardSoundPolicy.shouldPlay(LOCK, UNLOCK, false, 8));
+        assertFalse(KeyguardSoundPolicy.isDuplicateExit(true, 8));
+        assertFalse(KeyguardSoundPolicy.isDuplicateExit(true, 2563));
+        // Hidden keyguard with no recent exit still finishes normally (observed 939 ms case).
+        assertFalse(KeyguardSoundPolicy.isDuplicateExit(false, 939));
+        assertFalse(KeyguardSoundPolicy.isDuplicateExit(false, NONE));
     }
 }

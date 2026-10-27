@@ -14,6 +14,20 @@
 - 验证：`testDebugUnitTest assembleDebug` 通过（2 条测试），Debug 包 38671 字节，包名与标签经 `aapt2` 核对。
 - 未完成：真机安装与验收（更换包名需要卸载旧模块）、GitHub Release、后续修复接入。
 
+## STATUS-007：退出钩子仍被 JIT 绕过，修复判定为不可靠
+
+- 日期：2026-10-27。探针记录（每次 `onKeyguardExitFinished` 一行）显示：
+  同一段时间内实际播放 7 次解锁音，钩子只收到 3 次调用，且三次都是
+  `showing=true`、不判定为重复。跳过计数为 0。
+- 结论一：即便对四个调用方都做了 `deoptimize`，调用仍会被 JIT 重新内联绕过，
+  修改后钩子只能偶然命中。此前的 `playSound` 钩子也是同一原因。
+- 结论二：USER_PRESENT 并非只由 `onKeyguardExitFinished` 发出，
+  `DeviceEntryUserPresentStartable` 也会发；因此「广播条数」不能当作退出次数使用，
+  早期用它推算重复次数的方法作废。
+- 现状：该修复在真机上基本不生效，也未造成副作用。探针日志已移除。
+- 待定：要么放弃音效去重只保留屏保修复，要么改在更底层（如 SoundPool）拦截，
+  后者影响面更大、需重新评估。
+
 ## STATUS-006：去重规则改为时间窗加锁屏隐藏双条件
 
 - 日期：2026-10-27。探针日志证实：解锁音 ID=2、锁屏音 ID=1，两者不同音效；
