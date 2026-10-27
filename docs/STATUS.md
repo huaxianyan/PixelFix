@@ -14,6 +14,17 @@
 - 验证：`testDebugUnitTest assembleDebug` 通过（2 条测试），Debug 包 38671 字节，包名与标签经 `aapt2` 核对。
 - 未完成：真机安装与验收（更换包名需要卸载旧模块）、GitHub Release、后续修复接入。
 
+## STATUS-008：改在音效池播放处拦截，已确认接线成功
+
+- 日期：2026-10-27。按用户选择改为拦截 `android.media.SoundPool.play`，
+  只匹配锁屏自己持有的音效池实例与 `mUnlockSoundId`，其他音效一律放行。
+- 关键坑：`mLockSounds` 与 `mUnlockSoundId` 在构造器里还是 null/0，要到
+  `setupLocked()` 之后才有值；改为首次播放时惰性读取。日志确认
+  `Keyguard sound owner captured; unlockId=2`。
+- 现状：日志出现 `Keyguard sound playback observed`，说明钩子真正命中了解锁音。
+  当前进程内尚未遇到重复，因此还没有跳过记录。
+- 仍待验证：真实重复出现时是否被正确压掉，以及正常解锁是否始终保留一声。
+
 ## STATUS-007：退出钩子仍被 JIT 绕过，修复判定为不可靠
 
 - 日期：2026-10-27。探针记录（每次 `onKeyguardExitFinished` 一行）显示：
