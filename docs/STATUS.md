@@ -14,6 +14,21 @@
 - 验证：`testDebugUnitTest assembleDebug` 通过（2 条测试），Debug 包 38671 字节，包名与标签经 `aapt2` 核对。
 - 未完成：真机安装与验收（更换包名需要卸载旧模块）、GitHub Release、后续修复接入。
 
+## STATUS-003：实现锁屏音效去重，待真机验证
+
+- 日期：2026-10-27。分支 `fix/keyguard-double-sound`，未合并、未发布。
+- 五份现场结论：一次解锁里 `onKeyguardExitFinished` 会跑两次以上，每次都播放解锁音并
+  发一次 USER_PRESENT。第一次在锁屏仍显示时播，收尾那次 `mShowing` 已为 false。
+- 实现：新增 `KeyguardSoundFix` 与纯逻辑 `KeyguardSoundPolicy`，只 hook
+  `KeyguardViewMediator.playSound(I)`，当请求的音效等于 `mUnlockSoundId` 且 `mShowing`
+  为 false 时跳过。锁屏音、解锁广播、认证与场景判断都不动。
+- 核对方式调整：两个修复针对同一个系统界面 APK，构建号与 APK 哈希收成一组
+  `SYSTEMUI_BUILD` / `SYSTEMUI_SHA256`；各项修复仍各自捕获原生所有者并在失败时
+  单独停用。原 `DREAM_LOCKS_*` 常量随之改名。
+- 验证：`testDebugUnitTest assembleDebug` 通过（3 条测试，含新增策略测试）。
+  未安装、未真机验证；第二次广播是否被消费不再需要关心，因为广播保持原样。
+- 待办：真机确认只响一声且解锁广播仍为两次；合并到 main 与版本号提升另定。
+
 ## STATUS-002：图标定为维护者微调稿
 
 - 日期：2026-10-26。维护者提供微调后的 PNG，图案以此为准：白色机身、深色相机条与镜头点、

@@ -15,9 +15,10 @@ android {
         targetSdk = 37
         versionCode = 3
         versionName = "0.3.0"
-        // Gate per fix, never per module: a future fix brings its own verified build.
-        buildConfigField("String", "DREAM_LOCKS_BUILD", "\"CP3A.261005.005\"")
-        buildConfigField("String", "DREAM_LOCKS_SYSTEMUI_SHA256",
+        // Every fix targets this exact SystemUI APK. A fix that needs another build
+        // must bring its own constants instead of widening this gate.
+        buildConfigField("String", "SYSTEMUI_BUILD", "\"CP3A.261005.005\"")
+        buildConfigField("String", "SYSTEMUI_SHA256",
             "\"d626069f146882d78af2133a7f91f3fad11a428ff7be288d3f1c5eb5effe50d6\"")
     }
 
