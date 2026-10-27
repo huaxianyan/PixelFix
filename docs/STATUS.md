@@ -14,6 +14,18 @@
 - 验证：`testDebugUnitTest assembleDebug` 通过（2 条测试），Debug 包 38671 字节，包名与标签经 `aapt2` 核对。
 - 未完成：真机安装与验收（更换包名需要卸载旧模块）、GitHub Release、后续修复接入。
 
+## STATUS-005：音效去重改为调用方反优化与时间窗判定
+
+- 日期：2026-10-27。真机首轮：5 次解锁里 2 次没有音效，但模块的跳过计数为 0，
+  说明钩子根本没被调用——`playSound` 的调用方 `onKeyguardExitFinished` 被 AOT 内联，
+  与屏保修复当初遇到的情况一致。那两次静音属原生行为，不是模块造成的。
+- 修正一：安装时对 `onKeyguardExitFinished` 调用 `deoptimize`，让 `playSound` 钩子生效。
+- 修正二：判定条件从 `mShowing` 换成时间窗——同一把解锁里 800 ms 内的第二次解锁音才跳过
+  （实测重复间隔 56～444 ms）。没有前一声时永远播，因此不会再出现整次静音。
+- 新增首次命中日志 `Keyguard sound interceptor active`，用于确认钩子确实被调用。
+- 验证：3 条单元测试与 `assembleRelease` 通过；已覆盖安装，但 SystemUI 进程仍是旧代码，
+  需重启后生效。
+
 ## STATUS-004：建立正式签名身份并首次安装
 
 - 日期：2026-10-27。按用户选择生成随机口令的 PKCS#12 密钥库，RSA 4096，有效期 100 年；

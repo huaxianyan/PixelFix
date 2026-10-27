@@ -10,11 +10,16 @@ public final class KeyguardSoundPolicyTest {
     private static final int LOCK = 43;
 
     @Test
-    public void duplicateExitAfterUnlockStaysSilentButNormalSoundsPlay() {
-        // Second onKeyguardExitFinished of one unlock: keyguard already hidden.
-        assertFalse(KeyguardSoundPolicy.shouldPlay(UNLOCK, UNLOCK, false));
-        // First exit of the unlock, and every other sound, stay untouched.
-        assertTrue(KeyguardSoundPolicy.shouldPlay(UNLOCK, UNLOCK, true));
-        assertTrue(KeyguardSoundPolicy.shouldPlay(LOCK, UNLOCK, false));
+    public void repeatedUnlockSoundOfOneUnlockIsDroppedButFirstOneAlwaysPlays() {
+        // No previous unlock sound yet: always play.
+        assertTrue(KeyguardSoundPolicy.shouldPlay(UNLOCK, UNLOCK, Long.MAX_VALUE));
+        assertTrue(KeyguardSoundPolicy.shouldPlay(UNLOCK, UNLOCK, 5000));
+        // Duplicate inside the observed window (56..444 ms) is dropped.
+        assertFalse(KeyguardSoundPolicy.shouldPlay(UNLOCK, UNLOCK, 56));
+        assertFalse(KeyguardSoundPolicy.shouldPlay(UNLOCK, UNLOCK, 444));
+        // After the window a new unlock may sound again.
+        assertTrue(KeyguardSoundPolicy.shouldPlay(UNLOCK, UNLOCK, 900));
+        // The lock sound is never touched.
+        assertTrue(KeyguardSoundPolicy.shouldPlay(LOCK, UNLOCK, 10));
     }
 }

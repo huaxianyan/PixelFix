@@ -1,13 +1,19 @@
 package com.neko7ina.pixelfix;
 
-/** Decides whether a keyguard sound request may play, from native state only. */
+/** Decides whether a keyguard sound request belongs to a duplicate unlock exit. */
 final class KeyguardSoundPolicy {
+    /** Observed duplicate intervals on this build: 56, 56, 412, 428, 442, 444 ms. */
+    static final long DUPLICATE_WINDOW_MS = 800L;
+
     /**
-     * The unlock sound belongs to the first exit of an unlock. Native code calls
-     * {@code onKeyguardExitFinished} again when the surface-behind animation finishes, and the
-     * keyguard is already hidden by then, which is the duplicate that plays a second time.
+     * Only the second request of the same unlock is dropped. A request without a previous
+     * unlock sound always plays, so an unlock can never end up silent because of this rule.
      */
-    static boolean shouldPlay(int requestedSoundId, int unlockSoundId, boolean keyguardShowing) {
-        return !(requestedSoundId == unlockSoundId && !keyguardShowing);
+    static boolean shouldPlay(int requestedSoundId, int unlockSoundId,
+            long sinceLastUnlockSoundMs) {
+        if (requestedSoundId != unlockSoundId) {
+            return true;
+        }
+        return sinceLastUnlockSoundMs >= DUPLICATE_WINDOW_MS;
     }
 }
