@@ -35,3 +35,5 @@ openssl x509 -in signing/release-certificate.pem -outform DER | sha256sum
 ## 本机构建
 
 `assembleDebug` 与本机 `assembleRelease` 都使用同一套正式身份签名，Debug 包与发布包可以互相覆盖安装。签名材料仍只存在 `signing/` 目录（不入库），缺失时退回默认 debug 证书。
+
+备份位置：NAS 的 `Android Signing/PixelFix/`（2026-11-13 建立），含私钥库、口令、公开证书、SHA256SUMS.txt 与恢复说明。文件放回本机 `signing/` 目录即可恢复发布能力。
