@@ -31,3 +31,7 @@ openssl x509 -in signing/release-certificate.pem -outform DER | sha256sum
 `\192.168.7.216\homes\NeKo7inA\dev\Android Signing\PixelFix\`，至少包含密钥库与凭据文件。
 
 私钥丢失意味着已安装用户无法覆盖升级，只能卸载重装。只有公开证书无法签发新包。
+
+## 本机构建
+
+`assembleDebug` 与本机 `assembleRelease` 都使用同一套正式身份签名，Debug 包与发布包可以互相覆盖安装。签名材料仍只存在 `signing/` 目录（不入库），缺失时退回默认 debug 证书。

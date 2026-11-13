@@ -53,6 +53,12 @@ android {
     }
 
     buildTypes {
+        debug {
+            // 本机 Debug 包同样用正式身份签名，避免与发布包不能互相覆盖安装。
+            if (hasReleaseSigning) {
+                signingConfig = signingConfigs.getByName("release")
+            }
+        }
         release {
             isMinifyEnabled = false
             if (hasReleaseSigning) {
