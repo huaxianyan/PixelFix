@@ -26,6 +26,8 @@ public final class MainModule extends XposedModule {
         }
         attempted = true;
         if (Build.VERSION.SDK_INT != 37) {
+            log(Log.INFO, TAG, diag("gate=mismatch(sdk=" + Build.VERSION.SDK_INT + ")", "unknown",
+                    param.getClassLoader()));
             log(Log.WARN, TAG, "unsupported SDK; inactive; sdk=" + Build.VERSION.SDK_INT);
             return;
         }
@@ -33,6 +35,8 @@ public final class MainModule extends XposedModule {
         try {
             digest = sha256(param.getApplicationInfo().sourceDir);
         } catch (Throwable error) {
+            log(Log.INFO, TAG, diag("gate=mismatch(hash-error)", "unknown",
+                    param.getClassLoader()));
             log(Log.ERROR, TAG, "Cannot hash the SystemUI APK; inactive", error);
             return;
         }
@@ -41,14 +45,26 @@ public final class MainModule extends XposedModule {
         // alone when its native bindings fail.
         if (!BuildConfig.SYSTEMUI_BUILD.equals(Build.ID)
                 || !BuildConfig.SYSTEMUI_SHA256.equals(digest)) {
+            log(Log.INFO, TAG, diag("gate=mismatch", digest, param.getClassLoader()));
             log(Log.WARN, TAG, "SystemUI build mismatch; inactive; build=" + Build.ID
                     + "; sha256=" + digest);
             return;
         }
+        log(Log.INFO, TAG, diag("gate=matched", digest, param.getClassLoader()));
         log(Log.INFO, TAG, "adaptation matched; module=" + BuildConfig.VERSION_NAME
                 + "; build=" + Build.ID + "; sha256=" + digest);
         installDreamFix(param);
         installKeyguardSoundFix(param);
+    }
+
+    /** 一行自检摘要：模块版本、系统构建、系统界面哈希、门禁结论、各修复符号是否还在。 */
+    private String diag(String gate, String digest, ClassLoader loader) {
+        return "diag: module=" + BuildConfig.VERSION_NAME
+                + " sdk=" + Build.VERSION.SDK_INT
+                + " build=" + Build.ID
+                + " sha256=" + digest
+                + " " + gate
+                + " targets[" + Diagnostics.targets(loader) + "]";
     }
 
     private void installDreamFix(PackageReadyParam param) {

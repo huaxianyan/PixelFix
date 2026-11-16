@@ -14,6 +14,17 @@
 - 验证：`testDebugUnitTest assembleDebug` 通过（2 条测试），Debug 包 38671 字节，包名与标签经 `aapt2` 核对。
 - 未完成：真机安装与验收（更换包名需要卸载旧模块）、GitHub Release、后续修复接入。
 
+## STATUS-011：加入常驻自检摘要（0.5.0）
+
+- 日期：2026-11-17。新增 `Diagnostics`：系统界面每次启动写一行摘要，**不受构建门禁限制**，
+  便于系统升级后判断状态。
+- 格式：`diag: module=<版本> sdk=<SDK> build=<构建号> sha256=<系统界面哈希>
+  gate=matched|mismatch[(原因)] targets[dream=… sound=… unlockScene=…]`。
+- 门禁不匹配时该行仍会输出（随后照旧不安装任何修复），符号缺失会点名到具体项。
+- 真机（系统界面 5258）：`gate=matched targets[dream=true sound=true unlockScene=true]`。
+- 下一步：按已确认的方案实现 AOD 指纹解锁场景延后（延后提交、过渡建立即放行、
+  150 毫秒超时回落），并对每次解锁输出 `unlock:` 判定摘要。
+
 ## STATUS-010：合并到 main 并发布 v0.4.0
 
 - 日期：2026-10-27。分支 `fix/keyguard-double-sound` 合并到 `main`，版本升到 `0.4.0 / 4`。
